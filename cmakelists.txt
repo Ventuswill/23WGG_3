@@ -1,0 +1,73 @@
+cmake_minimum_required( VERSION 3.10 )
+
+# Global Settings
+set_property( GLOBAL PROPERTY USE_FOLDERS ON )
+
+# Solution
+project( GameSolution VERSION 0.0.1 )
+
+# Visual Studio Settings
+if( CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
+	set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /ZI" ) # Program Database for Edit and Continue
+endif()
+
+###################
+# box2d Library
+###################
+
+include( GNUInstallDirs )
+add_subdirectory ( Framework/Libraries/box2d/src )
+
+###################
+# bgfxFramework Library
+###################
+
+add_subdirectory( Framework )
+
+###################
+# Game Project
+###################
+
+# File Setup
+file( GLOB_RECURSE GameSourceFiles
+	Game/Source/*.cpp
+	Game/Source/*.h
+	Game/DataRaw/Shaders/*.vert
+	Game/DataRaw/Shaders/*.frag
+	Game/DataRaw/Shaders/*.sc
+	Game/DataRaw/*.bat
+	BuildShaders.bat
+	GenerateProjectFiles.bat
+)
+source_group( TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${GameSourceFiles} )
+
+# Project Creation
+add_executable( GameProject WIN32 ${GameSourceFiles} )
+
+target_include_directories( GameProject PUBLIC
+	Game/Source
+	Framework/Source
+)
+
+target_compile_features( GameProject PRIVATE cxx_std_17 )
+
+# PCH Files
+target_precompile_headers( GameProject PRIVATE Framework/Source/Framework.h )
+file( GLOB_RECURSE GamePCHFiles ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/cmake_pch.* )
+source_group( "CMake PCH Files" FILES ${GamePCHFiles} )
+
+# Libraries to Link
+target_link_libraries( GameProject
+	Framework
+	box2d
+	bgfx
+	bx
+	bimg
+)
+
+# Visual Studio Settings
+if( CMAKE_CXX_COMPILER_ID MATCHES "MSVC" )
+	# Debug working directory and Startup Project
+	set_property( TARGET GameProject PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Game" )
+	set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT GameProject )
+endif()
